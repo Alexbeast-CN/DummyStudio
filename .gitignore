@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+# eclipse stuff
+.project
+.cproject
+
+# Clion stuff
+cmake-build*/
+
+# vscode stuff
+.idea/
+.vscode/
+.history/
