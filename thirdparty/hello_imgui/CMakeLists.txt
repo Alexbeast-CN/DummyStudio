@@ -139,12 +139,6 @@ if (HELLOIMGUI_USE_GLAD)
     target_link_libraries(${target_name} PUBLIC glad)
 endif()
 
-if (MSVC)
-    hello_imgui_msvc_target_group_sources(${target_name})
-    hello_imgui_msvc_target_set_folder(${target_name} ${HELLOIMGUI_SOLUTIONFOLDER})
-endif()
-
-
 # OS specific link options
 if (UNIX AND NOT EMSCRIPTEN)
     target_link_libraries(hello_imgui PUBLIC stdc++ dl)

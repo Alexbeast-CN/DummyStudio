@@ -18,10 +18,6 @@ if (library_type STREQUAL SHARED_LIBRARY)
     target_compile_definitions(glad PUBLIC GLAD_GLAPI_EXPORT PRIVATE GLAD_GLAPI_EXPORT_BUILD)
 endif()
 
-if (MSVC)
-    hello_imgui_msvc_target_set_folder(glad ${HELLOIMGUI_SOLUTIONFOLDER}/external/OpenGL_Loaders)
-endif()
-
 if(PROJECT_IS_TOP_LEVEL)
     install(TARGETS glad DESTINATION ./lib/)
 endif()

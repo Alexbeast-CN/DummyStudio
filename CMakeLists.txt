@@ -28,10 +28,11 @@ target_include_directories(imgui PUBLIC ${IMGUI_DIR})
 # OpenGL loader
 option(HELLOIMGUI_USE_GLAD "Use Glad OpenGl loader" ON)
 find_package(OpenGL REQUIRED)
+set(HELLOIMGUI_SOLUTIONFOLDER ${CMAKE_CURRENT_LIST_DIR}/thirdparty/hello_imgui)
 include(thirdparty/OpenGL_Loaders/glad.cmake)
 
 # hello_imgui
-add_subdirectory(thirdparty/hello_imgui hello_imgui EXCLUDE_FROM_ALL)
+add_subdirectory(${HELLOIMGUI_SOLUTIONFOLDER} hello_imgui EXCLUDE_FROM_ALL)
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} hello_imgui)
