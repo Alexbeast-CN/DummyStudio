@@ -1,190 +1,247 @@
-// Dear ImGui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
-// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
+#include "hello_imgui/hello_imgui.h"
 
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <stdio.h>
-#define GL_SILENCE_DEPRECATION
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <GLES2/gl2.h>
-#endif
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
-
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
-// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
-// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
+#ifdef HELLOIMGUI_USE_SDL_OPENGL3
+#define SDL_MAIN_HANDLED // Tell SDL not to #define main!!!
+#include <SDL.h>
 #endif
 
-// This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
-#ifdef __EMSCRIPTEN__
-#include "../libs/emscripten/emscripten_mainloop_stub.h"
-#endif
 
-static void glfw_error_callback(int error, const char* description)
+// Struct that holds the application's state
+struct AppState
 {
-    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+  float f = 0.0f;
+  int counter = 0;
+
+  enum class RocketState
+  {
+    Init,
+    Preparing,
+    Launched
+  };
+  float rocket_progress = 0.f;
+  RocketState rocketState = RocketState::Init;
+};
+
+// MyLoadFonts: demonstrate
+// * how to load additional fonts
+// * how to use assets from the local assets/ folder
+//   Files in the application assets/ folder are embedded automatically
+//   (on iOS/Android/Emscripten)
+ImFont * gAkronimFont = nullptr;
+void MyLoadFonts()
+{
+  // First, we load the default fonts (the font that was loaded first is the default font)
+  HelloImGui::ImGuiDefaultSettings::LoadDefaultFont_WithFontAwesomeIcons();
+
+  // Then we load a second font from
+  // Since this font is in a local assets/ folder, it was embedded automatically
+  std::string fontFilename = "fonts/Akronim-Regular.ttf";
+  gAkronimFont = HelloImGui::LoadFontTTF_WithFontAwesomeIcons(fontFilename, 40.f);
 }
 
-// Main code
-int main(int, char**)
+
+// CommandGui: the widgets on the left panel
+void CommandGui(AppState & state)
 {
-    glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        return 1;
+  ImGui::PushFont(gAkronimFont);
+  ImGui::Text("Hello  " ICON_FA_SMILE);
+  HelloImGui::ImageFromAsset("world.jpg");
+  ImGui::PopFont();
+  if (ImGui::IsItemHovered())
+  {
+    ImGui::SetTooltip(
+        "The custom font and the globe image below were loaded \n"
+        "from the application assets folder\n"\
+        "(those files are embedded automatically).");
+  }
 
-    // Decide GL+GLSL versions
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-    // GL ES 2.0 + GLSL 100
-    const char* glsl_version = "#version 100";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-#elif defined(__APPLE__)
-    // GL 3.2 + GLSL 150
-    const char* glsl_version = "#version 150";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+  ImGui::Separator();
+
+  // Edit 1 float using a slider from 0.0f to 1.0f
+  if (ImGui::SliderFloat("float", &state.f, 0.0f, 1.0f))
+    HelloImGui::Log(HelloImGui::LogLevel::Warning, "state.f was changed to %f", state.f);
+
+  // Buttons return true when clicked (most widgets return true when edited/activated)
+  if (ImGui::Button("Button")) {
+    state.counter++;
+    HelloImGui::Log(HelloImGui::LogLevel::Info, "Button was pressed", state.f);
+  }
+  ImGui::SameLine();
+  ImGui::Text("counter = %d", state.counter);
+
+  switch(state.rocketState)
+  {
+    case AppState::RocketState::Init:
+      if (ImGui::Button(ICON_FA_ROCKET " Launch rocket"))
+      {
+        state.rocketState = AppState::RocketState::Preparing;
+        HelloImGui::Log(HelloImGui::LogLevel::Warning, "Rocket is being prepared");
+      }
+      break;
+    case AppState::RocketState::Preparing:
+      ImGui::Text(ICON_FA_ROCKET " Please Wait");
+      state.rocket_progress += 0.003f;
+      if (state.rocket_progress >= 1.f)
+      {
+        state.rocketState = AppState::RocketState::Launched;
+        HelloImGui::Log(HelloImGui::LogLevel::Warning, "Rocket was launched!");
+      }
+      break;
+    case AppState::RocketState::Launched:
+      ImGui::Text(ICON_FA_ROCKET " Rocket Launched");
+      if (ImGui::Button("Reset Rocket"))
+      {
+        state.rocketState = AppState::RocketState ::Init;
+        state.rocket_progress = 0.f;
+      }
+      break;
+  }
+}
+
+// Our Gui in the status bar
+void StatusBarGui(const AppState &appState)
+{
+  if (appState.rocketState == AppState::RocketState::Preparing) {
+    ImGui::Text("Rocket completion: ");
+    ImGui::SameLine();
+    ImGui::ProgressBar(appState.rocket_progress, HelloImGui::EmToVec2(12.f, 1.f));
+  }
+}
+
+// Example of an optional native event callback for the backend (implemented here only for SDL)
+bool NativeBackendEventCallback(void * event)
+{
+#ifdef HELLOIMGUI_USE_SDL_OPENGL3
+  SDL_Event*  sdlEvent = (SDL_Event *)event;
+  switch( sdlEvent->type)
+  {
+    case SDL_KEYDOWN:
+      HelloImGui::Log(HelloImGui::LogLevel::Warning, "It SDL_KEYDOWN detected");
+      return false; // if you return true, the event is not processd further
+  }
+  return false;
 #else
-    // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+  return false;
 #endif
+};
 
-    // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", NULL, NULL);
-    if (window == NULL)
-        return 1;
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+int main(int, char **)
+{
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Part 1: Define the application state, fill the status and menu bars, and load additional font
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
+  // Our application state
+  AppState appState;
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+  // Hello ImGui params (they hold the settings as well as the Gui callbacks)
+  HelloImGui::RunnerParams runnerParams;
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    // - Our Emscripten build process allows embedding fonts to be accessible at runtime from the "fonts/" folder. See Makefile.emscripten for details.
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
+  runnerParams.appWindowParams.windowTitle = "Docking demo";
+  runnerParams.appWindowParams.windowGeometry.size = {800, 600};
+  // runnerParams.appWindowParams.restorePreviousGeometry = true;
 
-    // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+  //
+  // Status bar
+  //
+  // We use the default status bar of Hello ImGui
+  runnerParams.imGuiWindowParams.showStatusBar = true;
+  // uncomment next line in order to hide the FPS in the status bar
+  // runnerParams.imGuiWindowParams.showStatus_Fps = false;
+  runnerParams.callbacks.ShowStatus = [&appState] { StatusBarGui(appState); };
 
-    // Main loop
-#ifdef __EMSCRIPTEN__
-    // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
-    // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
-    io.IniFilename = NULL;
-    EMSCRIPTEN_MAINLOOP_BEGIN
-#else
-    while (!glfwWindowShouldClose(window))
-#endif
+  //
+  // Menu bar
+  //
+  // We use the default menu of Hello ImGui, to which we add some more items
+  runnerParams.imGuiWindowParams.showMenuBar = true;
+  runnerParams.callbacks.ShowMenus = []() {
+    if (ImGui::BeginMenu("My Menu"))
     {
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        glfwPollEvents();
-
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
-
-        // Rendering
-        ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(window);
+      if (ImGui::MenuItem("Test me"))
+        HelloImGui::Log(HelloImGui::LogLevel::Debug, "It works");
+      ImGui::EndMenu();
     }
-#ifdef __EMSCRIPTEN__
-    EMSCRIPTEN_MAINLOOP_END;
-#endif
+  };
 
-    // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+  // Custom load fonts
+  runnerParams.callbacks.LoadAdditionalFonts = MyLoadFonts;
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
+  // optional native events handling
+  runnerParams.callbacks.AnyBackendEventCallback = NativeBackendEventCallback;
 
-    return 0;
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Part 2: Define the application layout and windows
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //
+  //    2.1 Define the docking splits,
+  //    i.e. the way the screen space is split in different target zones for the dockable windows
+  //     We want to split "MainDockSpace" (which is provided automatically) into three zones, like this:
+  //
+  //    ___________________________________________
+  //    |        |                                |
+  //    | Left   |                                |
+  //    | Space  |    MainDockSpace               |
+  //    |        |                                |
+  //    |        |                                |
+  //    |        |                                |
+  //    -------------------------------------------
+  //    |     BottomSpace                         |
+  //    -------------------------------------------
+  //
+
+  // First, tell HelloImGui that we want full screen dock space (this will create "MainDockSpace")
+  runnerParams.imGuiWindowParams.defaultImGuiWindowType = HelloImGui::DefaultImGuiWindowType::ProvideFullScreenDockSpace;
+  // In this demo, we also demonstrate multiple viewports.
+  // you can drag windows outside out the main window in order to put their content into new native windows
+  runnerParams.imGuiWindowParams.enableViewports = true;
+
+  // Then, add a space named "BottomSpace" whose height is 25% of the app height.
+  // This will split the preexisting default dockspace "MainDockSpace" in two parts.
+  HelloImGui::DockingSplit splitMainBottom;
+  splitMainBottom.initialDock = "MainDockSpace";
+  splitMainBottom.newDock = "BottomSpace";
+  splitMainBottom.direction = ImGuiDir_Down;
+  splitMainBottom.ratio = 0.25f;
+
+  // Then, add a space to the left which occupies a column whose width is 25% of the app width
+  HelloImGui::DockingSplit splitMainLeft;
+  splitMainLeft.initialDock = "MainDockSpace";
+  splitMainLeft.newDock = "LeftSpace";
+  splitMainLeft.direction = ImGuiDir_Left;
+  splitMainLeft.ratio = 0.25f;
+
+  // Finally, transmit these splits to HelloImGui
+  runnerParams.dockingParams.dockingSplits = { splitMainBottom, splitMainLeft };
+
+  //
+  // 2.1 Define our dockable windows : each window provide a Gui callback, and will be displayed
+  //     in a docking split.
+  //
+
+  // A Command panel named "Commands" will be placed in "LeftSpace". Its Gui is provided calls "CommandGui"
+  HelloImGui::DockableWindow commandsWindow;
+  commandsWindow.label = "Commands";
+  commandsWindow.dockSpaceName = "LeftSpace";
+  commandsWindow.GuiFunction = [&appState]() { CommandGui(appState); };
+  // A Log  window named "Logs" will be placed in "BottomSpace". It uses the HelloImGui logger gui
+  HelloImGui::DockableWindow logsWindow;
+  logsWindow.label = "Logs";
+  logsWindow.dockSpaceName = "BottomSpace";
+  logsWindow.GuiFunction = [] { HelloImGui::LogGui(); };
+  // A Window named "Dear ImGui Demo" will be placed in "MainDockSpace"
+  HelloImGui::DockableWindow demoWindow;
+  demoWindow.label = "Dear ImGui Demo";
+  demoWindow.dockSpaceName = "MainDockSpace";
+  demoWindow.GuiFunction = [] { ImGui::ShowDemoWindow(); };
+  // Finally, transmit these windows to HelloImGui
+  runnerParams.dockingParams.dockableWindows = { commandsWindow, logsWindow, demoWindow };
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Part 3: Run the app
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  HelloImGui::Run(runnerParams);
+  return 0;
 }

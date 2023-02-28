@@ -1,7 +1,7 @@
 set(target_name hello_imgui)
 message(STATUS "Library ${target_name}")
 
-set(imgui_backends_dir ${HELLOIMGUI_IMGUI_SOURCE_DIR}/backends)
+set(imgui_backends_dir ${CMAKE_CURRENT_LIST_DIR}/../imgui/backends)
 
 if (APPLE)
     file(GLOB_RECURSE sources *.h *.cpp *.c *.mm)
@@ -111,14 +111,8 @@ if (HELLOIMGUI_USE_SDL_OPENGL3)
 endif()
 
 if (HELLOIMGUI_USE_GLFW_OPENGL3)
-    if (need_fetch_make_available_glfw)
-        set(GLFW_BUILD_EXAMPLES OFF)
-        set(GLFW_BUILD_TESTS OFF)
-        set(GLFW_BUILD_DOCS OFF)
-        set(GLFW_INSTALL OFF)
-        FetchContent_MakeAvailable(glfw)
-    endif()
     if (NOT TARGET glfw) # if glfw is not built as part of the whole build, find it
+        message(STATUS "Finding glfw")
         find_package(glfw3 CONFIG REQUIRED)
     endif()
     target_link_libraries(${target_name} PUBLIC glfw)
