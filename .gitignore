@@ -42,3 +42,28 @@ cmake-build*/
 .idea/
 .vscode/
 .history/
+build/
+android-build/
+mingw/
+
+# visual studio stuff
+.vs/
+out/
+*.opt
+
+# TwinCAT 3 projects
+PLC-TestProject/NotificationTest.sln.~u
+PLC-TestProject/TrialLicense.tclrs
+PLC-TestProject/Untitled1/Untitled1.tmc
+PLC-TestProject/Untitled1/_CompileInfo/
+PLC-TestProject/Untitled1/_Libraries/beckhoff automation gmbh/tc2_system/3.3.10.0/
+PLC-TestProject/_Boot/TwinCAT RT (x64)/
+PLC-TestProject/_Boot/TwinCAT RT (x86)/CurrentConfig.xml
+PLC-TestProject/_Boot/TwinCAT RT (x86)/CurrentEventMessages.xml
+PLC-TestProject/_Boot/TwinCAT RT (x86)/Plc/Port_851.app
+PLC-TestProject/_Boot/TwinCAT RT (x86)/Plc/Port_851.crc
+PLC-TestProject/_Boot/TwinCAT RT (x86)/Plc/Port_851_boot.tizip
+example/AdsDef.h
+example/AdsLib.h
+example/AdsLib.lib
+*.bin
