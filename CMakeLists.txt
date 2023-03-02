@@ -37,6 +37,6 @@ add_subdirectory(${HELLOIMGUI_SOLUTIONFOLDER} hello_imgui EXCLUDE_FROM_ALL)
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} hello_imgui)
 
-
+file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
 
 
