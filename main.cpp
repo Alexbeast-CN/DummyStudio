@@ -33,13 +33,18 @@ struct AppState
 // * how to use assets from the local assets/ folder
 //   Files in the application assets/ folder are embedded automatically
 //   (on iOS/Android/Emscripten)
-ImFont * gSiyuanFont = nullptr;
+ImFont * gSiyuanRFont = nullptr;
+ImFont * gSiyuanBFont = nullptr;
+
 void MyLoadFonts()
 {
   ImGuiIO& io = ImGui::GetIO(); // Get the ImGui IO object
   io.Fonts->AddFontFromFileTTF("assets/fonts/DroidSans.ttf", 16.0f);
-  const char* Siyuan = "assets/fonts/SourceHanSansSC-VF.ttf";
-  gSiyuanFont = io.Fonts->AddFontFromFileTTF(Siyuan, 18.0f,NULL,io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+  const char* SiyuanRegular = "assets/fonts/SourceHanSansCN-Regular.ttf";
+  const char* SiyuanBold = "assets/fonts/SourceHanSansCN-Bold.ttf";
+
+  gSiyuanRFont = io.Fonts->AddFontFromFileTTF(SiyuanRegular, 18.0f,NULL,io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+  gSiyuanBFont = io.Fonts->AddFontFromFileTTF(SiyuanBold, 30.0f,NULL,io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
 }
 
 void VehicleButton(const char* ButtonName, int &counter, double &timer){
@@ -68,7 +73,7 @@ void VehicleButton(const char* ButtonName, int &counter, double &timer){
 // CommandGui: the widgets on the left panel
 void CommandGui(AppState & state)
 {
-  ImGui::PushFont(gSiyuanFont);
+  ImGui::PushFont(gSiyuanBFont);
   ImGui::Text("四轮底盘控制器：");
   ImGui::PopFont();
   if (ImGui::IsItemHovered())
