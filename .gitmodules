@@ -4,6 +4,3 @@
 [submodule "thirdparty/imgui"]
 	path = thirdparty/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "communication/Ads"]
-	path = communication/Ads
-	url = https://github.com/Beckhoff/ADS.git
