@@ -1,4 +1,5 @@
 #include "hello_imgui/hello_imgui.h"
+#include "imgui_internal.h"
 
 #ifdef HELLOIMGUI_USE_SDL_OPENGL3
 #define SDL_MAIN_HANDLED // Tell SDL not to #define main!!!
@@ -10,7 +11,12 @@
 struct AppState
 {
   float f = 0.0f;
-  int counter = 0;
+  int ForwardLeftCounter = 0;
+  int ForwardCounter = 0;
+  int ForwardRightCounter = 0;
+  int BackwardLeftCounter = 0;
+  int BackwardCounter = 0;
+  int BackwardRightCounter = 0;
 
   enum class RocketState
   {
@@ -27,25 +33,43 @@ struct AppState
 // * how to use assets from the local assets/ folder
 //   Files in the application assets/ folder are embedded automatically
 //   (on iOS/Android/Emscripten)
-ImFont * gAkronimFont = nullptr;
+ImFont * gSiyuanFont = nullptr;
 void MyLoadFonts()
 {
-  // First, we load the default fonts (the font that was loaded first is the default font)
-  HelloImGui::ImGuiDefaultSettings::LoadDefaultFont_WithFontAwesomeIcons();
+  ImGuiIO& io = ImGui::GetIO(); // Get the ImGui IO object
+  io.Fonts->AddFontFromFileTTF("assets/fonts/DroidSans.ttf", 16.0f);
+  const char* Siyuan = "assets/fonts/SourceHanSansSC-VF.ttf";
+  gSiyuanFont = io.Fonts->AddFontFromFileTTF(Siyuan, 18.0f,NULL,io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+}
 
-  // Then we load a second font from
-  // Since this font is in a local assets/ folder, it was embedded automatically
-  std::string fontFilename = "fonts/Akronim-Regular.ttf";
-  gAkronimFont = HelloImGui::LoadFontTTF_WithFontAwesomeIcons(fontFilename, 40.f);
+void VehicleButton(const char* ButtonName, int &counter, double &timer){
+  // When the button is released, do the following thing.
+  if (ImGui::Button(ButtonName)) {
+    HelloImGui::Log(HelloImGui::LogLevel::Info, "%s Button was pressed", ButtonName);
+  }
+
+  // Check if button is active (held down)
+  if (ImGui::IsItemActive()) {
+    // Get current time
+    double current_time = ImGui::GetTime();
+    // Check if difference is greater than 0.1 seconds
+    if (current_time - timer > 0.1) {
+      counter++;
+      // Update last time
+      timer = current_time;
+    }
+  }
+
+  ImGui::SameLine();
+  ImGui::Text("count: %d", counter);
 }
 
 
 // CommandGui: the widgets on the left panel
 void CommandGui(AppState & state)
 {
-  ImGui::PushFont(gAkronimFont);
-  ImGui::Text("Hello  " ICON_FA_SMILE);
-  HelloImGui::ImageFromAsset("world.jpg");
+  ImGui::PushFont(gSiyuanFont);
+  ImGui::Text("四轮底盘控制器：");
   ImGui::PopFont();
   if (ImGui::IsItemHovered())
   {
@@ -55,19 +79,26 @@ void CommandGui(AppState & state)
         "(those files are embedded automatically).");
   }
 
+  static double FLtimer = 0;
+  static double Ftimer = 0;
+  static double FRtimer = 0;
+  static double BLtimer = 0;
+  static double Btimer = 0;
+  static double BRtimer = 0;
+
+  VehicleButton("ForwardLeft", state.ForwardLeftCounter,FLtimer);
+  VehicleButton("Forward", state.ForwardCounter,Ftimer);
+  VehicleButton("ForwardRight", state.ForwardRightCounter,FRtimer);
+  VehicleButton("BackwardLeft", state.BackwardLeftCounter,BLtimer);
+  VehicleButton("Backward", state.BackwardCounter,Btimer);
+  VehicleButton("BackwardRight", state.BackwardRightCounter,BRtimer);
+
   ImGui::Separator();
 
   // Edit 1 float using a slider from 0.0f to 1.0f
   if (ImGui::SliderFloat("float", &state.f, 0.0f, 1.0f))
     HelloImGui::Log(HelloImGui::LogLevel::Warning, "state.f was changed to %f", state.f);
 
-  // Buttons return true when clicked (most widgets return true when edited/activated)
-  if (ImGui::Button("Button")) {
-    state.counter++;
-    HelloImGui::Log(HelloImGui::LogLevel::Info, "Button was pressed", state.f);
-  }
-  ImGui::SameLine();
-  ImGui::Text("counter = %d", state.counter);
 
   switch(state.rocketState)
   {
