@@ -1,22 +1,31 @@
 #include "hello_imgui/hello_imgui.h"
 #include "imgui_internal.h"
+#include "myAds.h"
 
 #ifdef HELLOIMGUI_USE_SDL_OPENGL3
 #define SDL_MAIN_HANDLED // Tell SDL not to #define main!!!
 #include <SDL.h>
 #endif
 
+TCAds ads;
 
 // Struct that holds the application's state
 struct AppState
 {
-  float f = 0.0f;
   int ForwardLeftCounter = 0;
   int ForwardCounter = 0;
   int ForwardRightCounter = 0;
   int BackwardLeftCounter = 0;
   int BackwardCounter = 0;
   int BackwardRightCounter = 0;
+
+  float JointSpeed = 0.0f;
+  float J1Pos = 0.0f;
+  float J2Pos = 0.0f;
+  float J3Pos = 0.0f;
+  float J4Pos = 0.0f;
+  float J5Pos = 0.0f;
+  float J6Pos = 0.0f;
 
   enum class RocketState
   {
@@ -38,15 +47,18 @@ ImFont * gSiyuanBFont = nullptr;
 void MyLoadFonts()
 {
   ImGuiIO& io = ImGui::GetIO(); // Get the ImGui IO object
-  io.Fonts->AddFontFromFileTTF("assets/fonts/SourceHanSansCN-Regular.ttf", 18.0f);
+  io.Fonts->AddFontFromFileTTF("assets/fonts/SourceHanSansCN-Regular.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
   const char* SiyuanBold = "assets/fonts/SourceHanSansCN-Bold.ttf";
 
   gSiyuanBFont = io.Fonts->AddFontFromFileTTF(SiyuanBold, 30.0f,NULL,io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
 }
 
-void VehicleButton(const char* ButtonName, int &counter, double &timer){
+void FunctionButton(const char* ButtonName, ImGuiDir dir, double& timer,
+                    std::function<void()> ButOn, std::function<void()> ButOff) {
+
   // When the button is released, do the following thing.
-  if (ImGui::Button(ButtonName)) {
+  if (ImGui::ArrowButton(ButtonName, dir)) {
+    ButOff();
     HelloImGui::Log(HelloImGui::LogLevel::Info, "%s Button was pressed", ButtonName);
   }
 
@@ -56,14 +68,11 @@ void VehicleButton(const char* ButtonName, int &counter, double &timer){
     double current_time = ImGui::GetTime();
     // Check if difference is greater than 0.1 seconds
     if (current_time - timer > 0.1) {
-      counter++;
+      ButOn();
       // Update last time
       timer = current_time;
     }
   }
-
-  ImGui::SameLine();
-  ImGui::Text("count: %d", counter);
 }
 
 
@@ -88,47 +97,117 @@ void CommandGui(AppState & state)
   static double Btimer = 0;
   static double BRtimer = 0;
 
-  VehicleButton("ForwardLeft", state.ForwardLeftCounter,FLtimer);
-  VehicleButton("Forward", state.ForwardCounter,Ftimer);
-  VehicleButton("ForwardRight", state.ForwardRightCounter,FRtimer);
-  VehicleButton("BackwardLeft", state.BackwardLeftCounter,BLtimer);
-  VehicleButton("Backward", state.BackwardCounter,Btimer);
-  VehicleButton("BackwardRight", state.BackwardRightCounter,BRtimer);
+  static double J1Subtimer = 0;
+  static double J2Subtimer = 0;
+  static double J3Subtimer = 0;
+  static double J4Subtimer = 0;
+  static double J5Subtimer = 0;
+  static double J6Subtimer = 0;
+
+  static double J1Inctimer = 0;
+  static double J2Inctimer = 0;
+  static double J3Inctimer = 0;
+  static double J4Inctimer = 0;
+  static double J5Inctimer = 0;
+  static double J6Inctimer = 0;
+
+  float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+
+  FunctionButton("FL", ImGuiDir_Left, FLtimer,
+                 std::bind(&TCAds::FLButtonToggle, &ads, true),
+                 std::bind(&TCAds::FLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+
+  FunctionButton("F", ImGuiDir_Up, Ftimer,
+                 std::bind(&TCAds::FButtonToggle, &ads, true),
+                 std::bind(&TCAds::FButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+
+  FunctionButton("FR", ImGuiDir_Right, FRtimer,
+                 std::bind(&TCAds::FRButtonToggle, &ads, true),
+                 std::bind(&TCAds::FRButtonToggle, &ads, false));
+
+  FunctionButton("BL", ImGuiDir_Left, BLtimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+
+  FunctionButton("B", ImGuiDir_Down, Btimer,
+                 std::bind(&TCAds::BButtonToggle, &ads, true),
+                 std::bind(&TCAds::BButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+
+  FunctionButton("BR", ImGuiDir_Right, BRtimer,
+                 std::bind(&TCAds::BRButtonToggle, &ads, true),
+                 std::bind(&TCAds::BRButtonToggle, &ads, false));
 
   ImGui::Separator();
 
-  // Edit 1 float using a slider from 0.0f to 1.0f
-  if (ImGui::SliderFloat("float", &state.f, 0.0f, 1.0f))
-    HelloImGui::Log(HelloImGui::LogLevel::Warning, "state.f was changed to %f", state.f);
+  ImGui::PushFont(gSiyuanBFont);
+  ImGui::Text("节卡机械臂：");
+  ImGui::PopFont();
 
+  ImGui::SliderFloat("关节速度", &state.JointSpeed, 0.0f, 1.0f);
 
-  switch(state.rocketState)
-  {
-    case AppState::RocketState::Init:
-      if (ImGui::Button(ICON_FA_ROCKET " Launch rocket"))
-      {
-        state.rocketState = AppState::RocketState::Preparing;
-        HelloImGui::Log(HelloImGui::LogLevel::Warning, "Rocket is being prepared");
-      }
-      break;
-    case AppState::RocketState::Preparing:
-      ImGui::Text(ICON_FA_ROCKET " Please Wait");
-      state.rocket_progress += 0.003f;
-      if (state.rocket_progress >= 1.f)
-      {
-        state.rocketState = AppState::RocketState::Launched;
-        HelloImGui::Log(HelloImGui::LogLevel::Warning, "Rocket was launched!");
-      }
-      break;
-    case AppState::RocketState::Launched:
-      ImGui::Text(ICON_FA_ROCKET " Rocket Launched");
-      if (ImGui::Button("Reset Rocket"))
-      {
-        state.rocketState = AppState::RocketState ::Init;
-        state.rocket_progress = 0.f;
-      }
-      break;
-  }
+  FunctionButton("J1Sub", ImGuiDir_Left, J1Subtimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+  ImGui::Text("关节1: %d",&state.J1Pos);
+  ImGui::SameLine(0.0f, spacing);
+  FunctionButton("J1Inc", ImGuiDir_Right, J1Inctimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+
+  FunctionButton("J2Sub", ImGuiDir_Left, J2Subtimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+  ImGui::Text("关节2: %d",&state.J2Pos);
+  ImGui::SameLine(0.0f, spacing);
+  FunctionButton("J2Inc", ImGuiDir_Right, J2Inctimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+
+  FunctionButton("J3Sub", ImGuiDir_Left, J3Subtimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+  ImGui::Text("关节3: %d",&state.J3Pos);
+  ImGui::SameLine(0.0f, spacing);
+  FunctionButton("J3Inc", ImGuiDir_Right, J3Inctimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+
+  FunctionButton("J4Sub", ImGuiDir_Left, J4Subtimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+  ImGui::Text("关节4: %d",&state.J4Pos);
+  ImGui::SameLine(0.0f, spacing);
+  FunctionButton("J4Inc", ImGuiDir_Right, J4Inctimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+
+  FunctionButton("J5Sub", ImGuiDir_Left, J5Subtimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+  ImGui::Text("关节5: %d",&state.J5Pos);
+  ImGui::SameLine(0.0f, spacing);
+  FunctionButton("J5Inc", ImGuiDir_Right, J5Inctimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+
+  FunctionButton("J6Sub", ImGuiDir_Left, J6Subtimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+  ImGui::SameLine(0.0f, spacing);
+  ImGui::Text("关节6: %d",&state.J6Pos);
+  ImGui::SameLine(0.0f, spacing);
+  FunctionButton("J6Inc", ImGuiDir_Right, J6Inctimer,
+                 std::bind(&TCAds::BLButtonToggle, &ads, true),
+                 std::bind(&TCAds::BLButtonToggle, &ads, false));
 }
 
 // Our Gui in the status bar
@@ -161,6 +240,8 @@ bool NativeBackendEventCallback(void * event)
 
 int main(int, char **)
 {
+  ads.InitAds();
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Part 1: Define the application state, fill the status and menu bars, and load additional font
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////

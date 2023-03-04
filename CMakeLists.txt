@@ -34,8 +34,16 @@ include(thirdparty/OpenGL_Loaders/glad.cmake)
 # hello_imgui
 add_subdirectory(${HELLOIMGUI_SOLUTIONFOLDER} hello_imgui EXCLUDE_FROM_ALL)
 
-add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} hello_imgui)
+# Ads
+include_directories("C:/TwinCAT/AdsApi/TcAdsDll/Include")
+link_directories(${PROJECT_NAME} PRIVATE "C:/TwinCAT/AdsApi/TcAdsDll/Lib")
+
+# executable
+file (GLOB SRC ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.h)
+add_executable(${PROJECT_NAME} ${SRC})
+target_link_libraries(${PROJECT_NAME}
+                        hello_imgui
+                        TcAdsDll)
 
 file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
 
