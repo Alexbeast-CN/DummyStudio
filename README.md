@@ -14,7 +14,8 @@ The robot is based on:
 - [Beckhoff/ADS](https://github.com/Beckhoff/ADS)
 - [jaka API](https://www.jaka.com/jszl.html)
 
-> If you're using windows, please make sure to use a x64 compiler to build the source code.
+> If you're using windows, please make sure to use MSVC x86 to build the source code.
+> Because the TcAdsDll.lib only support for an x86 computer.
 
 The game engine is based on：
 

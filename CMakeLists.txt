@@ -3,6 +3,8 @@ project(DummyStudio)
 
 set(CMAKE_CXX_STANDARD 17)
 
+find_package(Threads REQUIRED)
+
 # GLFW
 set(HELLOIMGUI_USE_GLFW_OPENGL3 ON)
 
@@ -38,12 +40,27 @@ add_subdirectory(${HELLOIMGUI_SOLUTIONFOLDER} hello_imgui EXCLUDE_FROM_ALL)
 include_directories("C:/TwinCAT/AdsApi/TcAdsDll/Include")
 link_directories(${PROJECT_NAME} PRIVATE "C:/TwinCAT/AdsApi/TcAdsDll/Lib")
 
+#jaka
+set(JAKA_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty/jaka)
+include_directories(${JAKA_DIR}/include)
+
+if (WIN32)
+    LINK_DIRECTORIES(${JAKA_DIR}/lib_windows)
+    file(COPY ${JAKA_DIR}/lib_windows/jakaAPI.dll DESTINATION ${CMAKE_BINARY_DIR})
+elseif(UNIX)
+    LINK_DIRECTORIES(${JAKA_DIR}/lib_linux)
+    file(COPY ${JAKA_DIR}/lib_linux/jakaAPI.so DESTINATION ${CMAKE_BINARY_DIR})
+endif ()
+LINK_LIBRARIES(jakaAPI)
+
 # executable
-file (GLOB SRC ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.h)
+file (GLOB SRC ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
 add_executable(${PROJECT_NAME} ${SRC})
 target_link_libraries(${PROJECT_NAME}
+                        Threads::Threads
                         hello_imgui
                         TcAdsDll)
+
 # Assets
 file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
 
