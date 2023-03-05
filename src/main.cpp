@@ -1,6 +1,10 @@
 #include "hello_imgui/hello_imgui.h"
 #include "imgui_internal.h"
 #include "myAds.h"
+#include "JAKAZuRobot.h"
+#include "jktypes.h"
+
+#define PI 3.1415926
 
 #ifdef HELLOIMGUI_USE_SDL_OPENGL3
 #define SDL_MAIN_HANDLED // Tell SDL not to #define main!!!
@@ -8,6 +12,7 @@
 #endif
 
 TCAds ads;
+JAKAZuRobot demo;
 
 // Struct that holds the application's state
 struct AppState
@@ -244,7 +249,22 @@ bool NativeBackendEventCallback(void * event)
 
 int main(int, char **)
 {
+  // ADS init
   ads.InitAds();
+
+  // JAKA init
+  std::string ipaddr = "10.5.5.100";
+  auto isLogin = demo.login_in(ipaddr.c_str());
+  //机器人上电
+  auto isPowerON = demo.power_on();
+  //机器人上使能
+  auto isEnable = demo.enable_robot();
+
+  if (isLogin & isPowerON & isEnable){
+    HelloImGui::Log(HelloImGui::LogLevel::Info, "成功登录节卡机器人！");
+  } else {
+    HelloImGui::Log(HelloImGui::LogLevel::Error, "节卡机器人登录失败！");
+  }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Part 1: Define the application state, fill the status and menu bars, and load additional font
@@ -361,5 +381,6 @@ int main(int, char **)
   // Part 3: Run the app
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
   HelloImGui::Run(runnerParams);
+
   return 0;
 }
