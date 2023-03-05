@@ -20,12 +20,12 @@ struct AppState
   int BackwardRightCounter = 0;
 
   float JointSpeed = 0.0f;
-  float J1Pos = 0.0f;
-  float J2Pos = 0.0f;
-  float J3Pos = 0.0f;
-  float J4Pos = 0.0f;
-  float J5Pos = 0.0f;
-  float J6Pos = 0.0f;
+  double J1Pos = 0.0;
+  double J2Pos = 0.0;
+  double J3Pos = 0.0;
+  double J4Pos = 0.0;
+  double J5Pos = 0.0;
+  double J6Pos = 0.0;
 
   enum class RocketState
   {
@@ -114,32 +114,32 @@ void CommandGui(AppState & state)
   float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
 
   FunctionButton("FL", ImGuiDir_Left, FLtimer,
-                 std::bind(&TCAds::FLButtonToggle, &ads, true),
-                 std::bind(&TCAds::FLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->FLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->FLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
 
   FunctionButton("F", ImGuiDir_Up, Ftimer,
-                 std::bind(&TCAds::FButtonToggle, &ads, true),
-                 std::bind(&TCAds::FButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->FButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->FButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
 
   FunctionButton("FR", ImGuiDir_Right, FRtimer,
-                 std::bind(&TCAds::FRButtonToggle, &ads, true),
-                 std::bind(&TCAds::FRButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->FRButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->FRButtonToggle(false); });
 
   FunctionButton("BL", ImGuiDir_Left, BLtimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
 
   FunctionButton("B", ImGuiDir_Down, Btimer,
-                 std::bind(&TCAds::BButtonToggle, &ads, true),
-                 std::bind(&TCAds::BButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
 
   FunctionButton("BR", ImGuiDir_Right, BRtimer,
-                 std::bind(&TCAds::BRButtonToggle, &ads, true),
-                 std::bind(&TCAds::BRButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BRButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BRButtonToggle(false); });
 
   ImGui::Separator();
 
@@ -150,64 +150,64 @@ void CommandGui(AppState & state)
   ImGui::SliderFloat("关节速度", &state.JointSpeed, 0.0f, 1.0f);
 
   FunctionButton("J1Sub", ImGuiDir_Left, J1Subtimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("关节1: %d",&state.J1Pos);
+  ImGui::Text("关节1: %.2f",&state.J1Pos);
   ImGui::SameLine(0.0f, spacing);
   FunctionButton("J1Inc", ImGuiDir_Right, J1Inctimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
 
   FunctionButton("J2Sub", ImGuiDir_Left, J2Subtimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("关节2: %d",&state.J2Pos);
+  ImGui::Text("关节2: %.2f",&state.J2Pos);
   ImGui::SameLine(0.0f, spacing);
   FunctionButton("J2Inc", ImGuiDir_Right, J2Inctimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
 
   FunctionButton("J3Sub", ImGuiDir_Left, J3Subtimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("关节3: %d",&state.J3Pos);
+  ImGui::Text("关节3: %.2f",&state.J3Pos);
   ImGui::SameLine(0.0f, spacing);
   FunctionButton("J3Inc", ImGuiDir_Right, J3Inctimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
 
   FunctionButton("J4Sub", ImGuiDir_Left, J4Subtimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("关节4: %d",&state.J4Pos);
+  ImGui::Text("关节4: %.2f",&state.J4Pos);
   ImGui::SameLine(0.0f, spacing);
   FunctionButton("J4Inc", ImGuiDir_Right, J4Inctimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
 
   FunctionButton("J5Sub", ImGuiDir_Left, J5Subtimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("关节5: %d",&state.J5Pos);
+  ImGui::Text("关节5: %.2f",&state.J5Pos);
   ImGui::SameLine(0.0f, spacing);
   FunctionButton("J5Inc", ImGuiDir_Right, J5Inctimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
 
   FunctionButton("J6Sub", ImGuiDir_Left, J6Subtimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
   ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("关节6: %d",&state.J6Pos);
+  ImGui::Text("关节6: %.2f",&state.J6Pos);
   ImGui::SameLine(0.0f, spacing);
   FunctionButton("J6Inc", ImGuiDir_Right, J6Inctimer,
-                 std::bind(&TCAds::BLButtonToggle, &ads, true),
-                 std::bind(&TCAds::BLButtonToggle, &ads, false));
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
+                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
 }
 
 // Our Gui in the status bar
@@ -218,6 +218,10 @@ void StatusBarGui(const AppState &appState)
     ImGui::SameLine();
     ImGui::ProgressBar(appState.rocket_progress, HelloImGui::EmToVec2(12.f, 1.f));
   }
+}
+
+void MainGui(const AppState &appState){
+  HelloImGui::ImageFromAsset("pics/jaka.png");
 }
 
 // Example of an optional native event callback for the backend (implemented here only for SDL)
@@ -252,7 +256,7 @@ int main(int, char **)
   // Hello ImGui params (they hold the settings as well as the Gui callbacks)
   HelloImGui::RunnerParams runnerParams;
 
-  runnerParams.appWindowParams.windowTitle = "Docking demo";
+  runnerParams.appWindowParams.windowTitle = "Robot Controller";
   runnerParams.appWindowParams.windowGeometry.size = {800, 600};
   // runnerParams.appWindowParams.restorePreviousGeometry = true;
 
@@ -337,7 +341,7 @@ int main(int, char **)
 
   // A Command panel named "Commands" will be placed in "LeftSpace". Its Gui is provided calls "CommandGui"
   HelloImGui::DockableWindow commandsWindow;
-  commandsWindow.label = "Commands";
+  commandsWindow.label = "按键控制";
   commandsWindow.dockSpaceName = "LeftSpace";
   commandsWindow.GuiFunction = [&appState]() { CommandGui(appState); };
   // A Log  window named "Logs" will be placed in "BottomSpace". It uses the HelloImGui logger gui
@@ -347,9 +351,9 @@ int main(int, char **)
   logsWindow.GuiFunction = [] { HelloImGui::LogGui(); };
   // A Window named "Dear ImGui Demo" will be placed in "MainDockSpace"
   HelloImGui::DockableWindow demoWindow;
-  demoWindow.label = "Dear ImGui Demo";
+  demoWindow.label = "三维交互";
   demoWindow.dockSpaceName = "MainDockSpace";
-  demoWindow.GuiFunction = [] { ImGui::ShowDemoWindow(); };
+  demoWindow.GuiFunction = [&appState]() {MainGui(appState); };
   // Finally, transmit these windows to HelloImGui
   runnerParams.dockingParams.dockableWindows = { commandsWindow, logsWindow, demoWindow };
 
