@@ -1,36 +1,25 @@
 #include "hello_imgui/hello_imgui.h"
-#include "imgui_internal.h"
-#include "myAds.h"
-#include "JAKAZuRobot.h"
-#include "jktypes.h"
-
-#define PI 3.1415926
 
 #ifdef HELLOIMGUI_USE_SDL_OPENGL3
 #define SDL_MAIN_HANDLED // Tell SDL not to #define main!!!
 #include <SDL.h>
 #endif
 
-TCAds ads;
-JAKAZuRobot demo;
 
 // Struct that holds the application's state
 struct AppState
 {
-  int ForwardLeftCounter = 0;
-  int ForwardCounter = 0;
-  int ForwardRightCounter = 0;
-  int BackwardLeftCounter = 0;
-  int BackwardCounter = 0;
-  int BackwardRightCounter = 0;
+//∫Û√ÊAppStateª·ΩË”√State¿¥Ω” ‹’‚–© ˝æ›
+  float f = 0.0f;
+  float q1 = 0.0f;
+  float q2 = 0.0f;
+  float q3 = 0.0f;
+  float q4 = 0.0f;
+  float q5 = 0.0f;
+  float q6 = 0.0f;
+  int counter = 0;
 
-  float JointSpeed = 0.0f;
-  double J1Pos = 0.0;
-  double J2Pos = 0.0;
-  double J3Pos = 0.0;
-  double J4Pos = 0.0;
-  double J5Pos = 0.0;
-  double J6Pos = 0.0;
+
 
   enum class RocketState
   {
@@ -43,49 +32,31 @@ struct AppState
 };
 
 // MyLoadFonts: demonstrate
-// * how to load additional fonts
-// * how to use assets from the local assets/ folder
-//   Files in the application assets/ folder are embedded automatically
+// * how to load additional fonts  »Á∫Œ»•º”‘ÿ∂ÓÕ‚µƒ◊÷ÃÂ
+// * how to use assets from the local assets/ folder ¥”±æµÿ◊ ‘¥/Œƒº˛º–÷–µ˜”√◊ ‘¥
+//   Files in the application assets/ folder are embedded automatically 
 //   (on iOS/Android/Emscripten)
-ImFont * gSiyuanBFont = nullptr;
-
+ImFont * gAkronimFont = nullptr;
 void MyLoadFonts()
 {
-  ImGuiIO& io = ImGui::GetIO(); // Get the ImGui IO object
-  io.Fonts->AddFontFromFileTTF("assets/fonts/SourceHanSansCN-Regular.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-  const char* SiyuanBold = "assets/fonts/SourceHanSansCN-Bold.ttf";
+  // First, we load the default fonts (the font that was loaded first is the default font)
+  HelloImGui::ImGuiDefaultSettings::LoadDefaultFont_WithFontAwesomeIcons();
 
-  gSiyuanBFont = io.Fonts->AddFontFromFileTTF(SiyuanBold, 30.0f,NULL,io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-}
-
-void FunctionButton(const char* ButtonName, ImGuiDir dir, double& timer,
-                    std::function<void()> ButOn, std::function<void()> ButOff) {
-
-  // When the button is released, do the following thing.
-  if (ImGui::ArrowButton(ButtonName, dir)) {
-    ButOff();
-    HelloImGui::Log(HelloImGui::LogLevel::Info, "%s Button was pressed", ButtonName);
-  }
-
-  // Check if button is active (held down)
-  if (ImGui::IsItemActive()) {
-    // Get current time
-    double current_time = ImGui::GetTime();
-    // Check if difference is greater than 0.1 seconds
-    if (current_time - timer > 0.1) {
-      ButOn();
-      // Update last time
-      timer = current_time;
-    }
-  }
+  // Then we load a second font from
+  // Since this font is in a local assets/ folder, it was embedded automatically
+  std::string fontFilename = "fonts/Akronim-Regular.ttf";
+  gAkronimFont = HelloImGui::LoadFontTTF_WithFontAwesomeIcons(fontFilename, 20.f);
 }
 
 
-// CommandGui: the widgets on the left panel
-void CommandGui(AppState & state)
+// CommandGui: the widgets on the left panel ◊Û≤‡√¸¡Ó––¥∞ø⁄µƒGUI…Ëº∆
+void CommandGui(AppState& state) 
 {
-  ImGui::PushFont(gSiyuanBFont);
-  ImGui::Text("ÂõõËΩÆÂ∫ïÁõòÊéßÂà∂Âô®Ôºö");
+  /*1.imgui≤ªƒ‹∂ØÃ¨µƒº”‘ÿ◊÷ÃÂ£¨À˘“‘–Ë“™Ã·«∞º”‘ÿÕÍ≥…£¨»ª∫Û π”√PushFont∫ÕPopFontµƒΩ”ø⁄Ω¯––◊™ªª
+  2.µ±Œ“√«º”‘ÿ¡À∂‡÷÷◊÷ÃÂ£¨µ´ «√ª”– π”√PushFont∫ÕPopFontΩ¯––…Ë÷√µƒ ±∫Ú£¨ π”√µƒ «Œ“√«µ⁄“ª∏ˆº”‘ÿµƒ◊÷ÃÂ*/
+  ImGui::PushFont(gAkronimFont);
+  ImGui::Text("MobileRobot"); //”√¿¥–¥Œƒ◊÷
+  //HelloImGui::ImageFromAsset("world.jpg"); //”√¿¥≤Âª≠
   ImGui::PopFont();
   if (ImGui::IsItemHovered())
   {
@@ -95,124 +66,143 @@ void CommandGui(AppState & state)
         "(those files are embedded automatically).");
   }
 
-  static double FLtimer = 0;
-  static double Ftimer = 0;
-  static double FRtimer = 0;
-  static double BLtimer = 0;
-  static double Btimer = 0;
-  static double BRtimer = 0;
-
-  static double J1Subtimer = 0;
-  static double J2Subtimer = 0;
-  static double J3Subtimer = 0;
-  static double J4Subtimer = 0;
-  static double J5Subtimer = 0;
-  static double J6Subtimer = 0;
-
-  static double J1Inctimer = 0;
-  static double J2Inctimer = 0;
-  static double J3Inctimer = 0;
-  static double J4Inctimer = 0;
-  static double J5Inctimer = 0;
-  static double J6Inctimer = 0;
-
   float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
-
-  FunctionButton("FL", ImGuiDir_Left, FLtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->FLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->FLButtonToggle(false); });
+  ImGui::PushButtonRepeat(true);
+  ImGui::ArrowButton("Left", ImGuiDir_Left);
   ImGui::SameLine(0.0f, spacing);
-
-  FunctionButton("F", ImGuiDir_Up, Ftimer,
-                 [ObjectPtr = &ads] { ObjectPtr->FButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->FButtonToggle(false); });
+  //ImGui::ImageButton();
+  ImGui::ArrowButton("Up", ImGuiDir_Up);
   ImGui::SameLine(0.0f, spacing);
-
-  FunctionButton("FR", ImGuiDir_Right, FRtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->FRButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->FRButtonToggle(false); });
-
-  FunctionButton("BL", ImGuiDir_Left, BLtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
+  ImGui::ArrowButton("Right", ImGuiDir_Right);
+  ImGui::ArrowButton("Left", ImGuiDir_Left);
   ImGui::SameLine(0.0f, spacing);
-
-  FunctionButton("B", ImGuiDir_Down, Btimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BButtonToggle(false); });
+  ImGui::ArrowButton("Down", ImGuiDir_Down);
   ImGui::SameLine(0.0f, spacing);
+  ImGui::ArrowButton("Right", ImGuiDir_Right);
+  ImGui::PopButtonRepeat();
 
-  FunctionButton("BR", ImGuiDir_Right, BRtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BRButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BRButtonToggle(false); });
+  ImGui::Separator(); //∑÷∏Óœﬂ
 
-  ImGui::Separator();
-
-  ImGui::PushFont(gSiyuanBFont);
-  ImGui::Text("ËäÇÂç°Êú∫Ê¢∞ËáÇÔºö");
+  ImGui::PushFont(gAkronimFont);
+  ImGui::Text("JAKA");  //”√¿¥–¥Œƒ◊÷
   ImGui::PopFont();
 
-  ImGui::SliderFloat("ÂÖ≥ËäÇÈÄüÂ∫¶", &state.JointSpeed, 0.0f, 1.0f);
+  // Edit 1 float using a slider from 0.0f to 1.0f  ÷–º‰µƒª¨Ãıø…“‘¥”0ª¨µΩ1  
+  if (ImGui::SliderFloat("speed", &state.f, 0.0f, 100.0f)) {
+    HelloImGui::Log(HelloImGui::LogLevel::Warning, "state.f was changed to %f",state.f);
+  }
 
-  FunctionButton("J1Sub", ImGuiDir_Left, J1Subtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
-  ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("ÂÖ≥ËäÇ1: %.2f",&state.J1Pos);
-  ImGui::SameLine(0.0f, spacing);
-  FunctionButton("J1Inc", ImGuiDir_Right, J1Inctimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
+  //1πÿΩ⁄µΩ6πÿΩ⁄µƒΩ«∂»øÿ÷∆£¨◊¯ƒÊ”“À≥£¨“™º”##,“™≤ª»ªÕ®—∂≥ˆŒ Ã‚
+  ImGui::PushButtonRepeat(true);
+      if (ImGui::ArrowButton("##Left", ImGuiDir_Left)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q1 anticlockwise");
+        state.q1 = state.q1 -state.f/100 ;
+      }
+     /* ImGui::SameLine(0.0f, spacing);
+      if(ImGui::ArrowButton("##Right", ImGuiDir_Right)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q1 clockwise");
+        state.q1 = state.q1 + state.f / 100;
+      }*/
+      ImGui::SameLine();
+      ImGui::Text("q1 = %f", state.q1);
 
-  FunctionButton("J2Sub", ImGuiDir_Left, J2Subtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
-  ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("ÂÖ≥ËäÇ2: %.2f",&state.J2Pos);
-  ImGui::SameLine(0.0f, spacing);
-  FunctionButton("J2Inc", ImGuiDir_Right, J2Inctimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
+      /*if (ImGui::ArrowButton("##Left", ImGuiDir_Left)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q2 anticlockwise");
+        state.q2 = state.q2 - state.f / 100;
+      }
+      ImGui::SameLine(0.0f, spacing);
+      if (ImGui::ArrowButton("##Right", ImGuiDir_Right)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q2 clockwise");
+        state.q2 = state.q2 + state.f / 100;
+      }
+      ImGui::SameLine();
+      ImGui::Text("q2 = %f", state.q2);
 
-  FunctionButton("J3Sub", ImGuiDir_Left, J3Subtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
-  ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("ÂÖ≥ËäÇ3: %.2f",&state.J3Pos);
-  ImGui::SameLine(0.0f, spacing);
-  FunctionButton("J3Inc", ImGuiDir_Right, J3Inctimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
+      if (ImGui::ArrowButton("##Left", ImGuiDir_Left)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q3 anticlockwise");
+        state.q3 = state.q3 - state.f / 100;
+      }
+      ImGui::SameLine(0.0f, spacing);
+      if (ImGui::ArrowButton("##Right", ImGuiDir_Right)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q3 clockwise");
+        state.q3 = state.q3+ state.f / 100;
+      }
+      ImGui::SameLine();
+      ImGui::Text("q3 = %f", state.q3);
 
-  FunctionButton("J4Sub", ImGuiDir_Left, J4Subtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
-  ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("ÂÖ≥ËäÇ4: %.2f",&state.J4Pos);
-  ImGui::SameLine(0.0f, spacing);
-  FunctionButton("J4Inc", ImGuiDir_Right, J4Inctimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
+      if (ImGui::ArrowButton("##Left", ImGuiDir_Left)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q4 anticlockwise");
+        state.q4 = state.q4 - state.f / 100;
+      }
+      ImGui::SameLine(0.0f, spacing);
+      if (ImGui::ArrowButton("##Right", ImGuiDir_Right)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q4 clockwise");
+        state.q4 = state.q4 + state.f / 100;
+      }
+      ImGui::SameLine();
+      ImGui::Text("q4 = %f", state.q4);
 
-  FunctionButton("J5Sub", ImGuiDir_Left, J5Subtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
-  ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("ÂÖ≥ËäÇ5: %.2f",&state.J5Pos);
-  ImGui::SameLine(0.0f, spacing);
-  FunctionButton("J5Inc", ImGuiDir_Right, J5Inctimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
+      if (ImGui::ArrowButton("##Left", ImGuiDir_Left)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q5 anticlockwise");
+        state.q5 = state.q5 - state.f / 100;
+      }
+      ImGui::SameLine(0.0f, spacing);
+      if (ImGui::ArrowButton("##Right", ImGuiDir_Right)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q5 clockwise");
+        state.q5 = state.q5 + state.f / 100;
+      }
+      ImGui::SameLine();
+      ImGui::Text("q5 = %f", state.q5);
 
-  FunctionButton("J6Sub", ImGuiDir_Left, J6Subtimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
-  ImGui::SameLine(0.0f, spacing);
-  ImGui::Text("ÂÖ≥ËäÇ6: %.2f",&state.J6Pos);
-  ImGui::SameLine(0.0f, spacing);
-  FunctionButton("J6Inc", ImGuiDir_Right, J6Inctimer,
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(true); },
-                 [ObjectPtr = &ads] { ObjectPtr->BLButtonToggle(false); });
+      if (ImGui::ArrowButton("##Left", ImGuiDir_Left)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q6 anticlockwise");
+        state.q6 = state.q6 - state.f / 100;
+      }
+      ImGui::SameLine(0.0f, spacing);
+      if (ImGui::ArrowButton("##Right", ImGuiDir_Right)) {
+        HelloImGui::Log(HelloImGui::LogLevel::Info, "q6 clockwise");
+        state.q6 = state.q6 + state.f / 100;
+      }
+      ImGui::SameLine();
+      ImGui::Text("q6 = %f", state.q6);*/
+  ImGui::PopButtonRepeat();
+
+  
+  // Buttons return true when clicked (most widgets return true when edited/activated)
+  if (ImGui::Button("Button")) {
+    state.counter++;
+    HelloImGui::Log(HelloImGui::LogLevel::Info, "Button was pressed", state.f);
+  }
+  ImGui::SameLine();
+  ImGui::Text("counter = %d", state.counter);
+
+  switch(state.rocketState)
+  {
+    case AppState::RocketState::Init:
+      if (ImGui::Button(ICON_FA_ROCKET " Launch rocket"))
+      {
+        state.rocketState = AppState::RocketState::Preparing;
+        HelloImGui::Log(HelloImGui::LogLevel::Warning, "Rocket is being prepared");
+      }
+      break;
+    case AppState::RocketState::Preparing:
+      ImGui::Text(ICON_FA_ROCKET " Please Wait");
+      state.rocket_progress += 0.003f;
+      if (state.rocket_progress >= 1.f)
+      {
+        state.rocketState = AppState::RocketState::Launched;
+        HelloImGui::Log(HelloImGui::LogLevel::Warning, "Rocket was launched!");
+      }
+      break;
+    case AppState::RocketState::Launched:
+      ImGui::Text(ICON_FA_ROCKET " Rocket Launched");
+      if (ImGui::Button("Reset Rocket"))
+      {
+        state.rocketState = AppState::RocketState ::Init;
+        state.rocket_progress = 0.f;
+      }
+      break;
+  }
 }
 
 // Our Gui in the status bar
@@ -223,10 +213,6 @@ void StatusBarGui(const AppState &appState)
     ImGui::SameLine();
     ImGui::ProgressBar(appState.rocket_progress, HelloImGui::EmToVec2(12.f, 1.f));
   }
-}
-
-void MainGui(const AppState &appState){
-  HelloImGui::ImageFromAsset("pics/jaka.png");
 }
 
 // Example of an optional native event callback for the backend (implemented here only for SDL)
@@ -249,23 +235,6 @@ bool NativeBackendEventCallback(void * event)
 
 int main(int, char **)
 {
-  // ADS init
-  ads.InitAds();
-
-  // JAKA init
-  std::string ipaddr = "10.5.5.100";
-  auto isLogin = demo.login_in(ipaddr.c_str());
-  //Êú∫Âô®‰∫∫‰∏äÁîµ
-  auto isPowerON = demo.power_on();
-  //Êú∫Âô®‰∫∫‰∏ä‰ΩøËÉΩ
-  auto isEnable = demo.enable_robot();
-
-  if (isLogin & isPowerON & isEnable){
-    HelloImGui::Log(HelloImGui::LogLevel::Info, "ÊàêÂäüÁôªÂΩïËäÇÂç°Êú∫Âô®‰∫∫ÔºÅ");
-  } else {
-    HelloImGui::Log(HelloImGui::LogLevel::Error, "ËäÇÂç°Êú∫Âô®‰∫∫ÁôªÂΩïÂ§±Ë¥•ÔºÅ");
-  }
-
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Part 1: Define the application state, fill the status and menu bars, and load additional font
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -276,7 +245,7 @@ int main(int, char **)
   // Hello ImGui params (they hold the settings as well as the Gui callbacks)
   HelloImGui::RunnerParams runnerParams;
 
-  runnerParams.appWindowParams.windowTitle = "Robot Controller";
+  runnerParams.appWindowParams.windowTitle = "Docking demo";
   runnerParams.appWindowParams.windowGeometry.size = {800, 600};
   // runnerParams.appWindowParams.restorePreviousGeometry = true;
 
@@ -361,7 +330,7 @@ int main(int, char **)
 
   // A Command panel named "Commands" will be placed in "LeftSpace". Its Gui is provided calls "CommandGui"
   HelloImGui::DockableWindow commandsWindow;
-  commandsWindow.label = "ÊåâÈîÆÊéßÂà∂";
+  commandsWindow.label = "Commands";
   commandsWindow.dockSpaceName = "LeftSpace";
   commandsWindow.GuiFunction = [&appState]() { CommandGui(appState); };
   // A Log  window named "Logs" will be placed in "BottomSpace". It uses the HelloImGui logger gui
@@ -371,9 +340,9 @@ int main(int, char **)
   logsWindow.GuiFunction = [] { HelloImGui::LogGui(); };
   // A Window named "Dear ImGui Demo" will be placed in "MainDockSpace"
   HelloImGui::DockableWindow demoWindow;
-  demoWindow.label = "‰∏âÁª¥‰∫§‰∫í";
+  demoWindow.label = "Dear ImGui Demo";
   demoWindow.dockSpaceName = "MainDockSpace";
-  demoWindow.GuiFunction = [&appState]() {MainGui(appState); };
+  demoWindow.GuiFunction = [] { ImGui::ShowDemoWindow(); };
   // Finally, transmit these windows to HelloImGui
   runnerParams.dockingParams.dockableWindows = { commandsWindow, logsWindow, demoWindow };
 
@@ -381,6 +350,5 @@ int main(int, char **)
   // Part 3: Run the app
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
   HelloImGui::Run(runnerParams);
-
   return 0;
 }
